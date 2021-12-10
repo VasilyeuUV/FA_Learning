@@ -13,7 +13,20 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Adding Assets'),
         ),
-        body: null,
+        body: Center(
+          child: Stack(
+            fit: StackFit.expand, // выравнивание посередине
+            children: <Widget>[
+              // использование виджета AssetImage
+              const Image(
+                image: AssetImage('assets/images/marmor.jpg'),
+              ),
+
+              // Класс (более короткая запись использования виджета AssetImage)
+              Image.asset('assets/icons/flutter_logo_icon.png')
+            ],
+          ),
+        ),
       ),
     );
   }
