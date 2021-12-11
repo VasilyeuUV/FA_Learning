@@ -9,6 +9,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        // применение кастомного шрифта для всего приложения
+        fontFamily: 'IndieFlower',
+      ),
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Adding Assets'),
@@ -23,7 +27,26 @@ class MyApp extends StatelessWidget {
               ),
 
               // Класс (более короткая запись использования виджета AssetImage)
-              Image.asset('assets/icons/flutter_logo_icon.png')
+              Image.asset('assets/icons/flutter_logo_icon.png'),
+
+              // Вывод текста добавленным шрифтом
+              // - размещение текста
+              const Positioned(
+                top: 16, // отступ сверху
+                left: 115, // отступ слева
+
+                // сам текст
+                child: Text(
+                  'My custom font',
+                  style: TextStyle(
+                    fontSize: 30,
+                    color: Colors.indigo,
+
+                    // применение кастомного шрифта для конкретного виджета
+                    fontFamily: 'IndieFlower',
+                  ),
+                ),
+              ),
             ],
           ),
         ),
