@@ -50,6 +50,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    /// Цвет
+    Color color = Theme.of(context).primaryColor;
+
+    /// Строка с кнопками
+    Widget buttonSection = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildButtonColumn(color, Icons.call, 'CALL'),
+        _buildButtonColumn(color, Icons.near_me, 'ROUTE'),
+        _buildButtonColumn(color, Icons.share, 'SHARE'),
+      ],
+    );
+
     return MaterialApp(
       title: 'Flutter layout demo',
       home: Scaffold(
@@ -59,9 +72,42 @@ class MyApp extends StatelessWidget {
         body: Column(
           children: [
             titleSection,
+            buttonSection,
           ],
         ),
       ),
+    );
+  }
+
+  /// Метод, определяющий макет кнопки с иконкой и текстом
+  /// label - текст
+  /// icon - иконка
+  /// color - цвет содержимого
+  Column _buildButtonColumn(Color color, IconData icon, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+
+      // равномерно распределить свободное пространство до, между и после каждого столбца
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Иконка
+        Icon(icon, color: color),
+
+        // Контейнер для текста
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+
+          // Сам текст
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: color,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
