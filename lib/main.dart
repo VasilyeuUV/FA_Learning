@@ -87,7 +87,19 @@ class MyApp extends StatelessWidget {
           title: const Text('Flutter layout demo'),
         ),
         body: Column(
-          children: [titleSection, buttonSection, textSection],
+          children: [
+            Image.asset(
+              'images/lake.jpg',
+              width: 600,
+              height: 240,
+              // сообщает фреймворку, что изображение должно быть как можно меньше,
+              // но должно охватывать весь блок рендеринга
+              fit: BoxFit.cover,
+            ),
+            titleSection,
+            buttonSection,
+            textSection
+          ],
         ),
       ),
     );
