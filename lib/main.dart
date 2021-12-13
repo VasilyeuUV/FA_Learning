@@ -7,11 +7,10 @@ class Book {
   final String title;
   final String author;
 
-  // конструктор
   Book(this.title, this.author);
 }
 
-/// Приложение
+/// Главный виджет
 class BooksApp extends StatefulWidget {
   const BooksApp({Key? key}) : super(key: key);
 
@@ -19,64 +18,153 @@ class BooksApp extends StatefulWidget {
   State<StatefulWidget> createState() => _BooksAppState();
 }
 
-/// Состояние приложения
+/// Состояние главного виджета
 class _BooksAppState extends State<BooksApp> {
-  /// Выбранная книга
-  Book? _selectedBook;
+  final BookRouterDelegate _routerDelegate = BookRouterDelegate();
+  final BookRouteInformationParser _routeInformationParser =
+      BookRouteInformationParser();
 
-  /// Список книг
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'Books App',
+      routerDelegate: _routerDelegate,
+      routeInformationParser: _routeInformationParser,
+    );
+  }
+}
+
+class BookRouteInformationParser extends RouteInformationParser<BookRoutePath> {
+  @override
+  Future<BookRoutePath> parseRouteInformation(
+      RouteInformation routeInformation) async {
+    final uri = Uri.parse(routeInformation.location!);
+
+    // Маршрут '/'
+    if (uri.pathSegments.isEmpty) {
+      return BookRoutePath.home();
+    }
+
+    // маршрут '/book/:id'
+    if (uri.pathSegments.length == 2) {
+      if (uri.pathSegments[0] != 'book') return BookRoutePath.unknown();
+      var remaining = uri.pathSegments[1];
+      var id = int.tryParse(remaining);
+      if (id == null) return BookRoutePath.unknown();
+      return BookRoutePath.details(id);
+    }
+
+    // Неизвестный маршрут
+    return BookRoutePath.unknown();
+  }
+
+  @override
+  RouteInformation? restoreRouteInformation(BookRoutePath path) {
+    if (path.isUnknown) {
+      return const RouteInformation(location: '/404');
+    }
+    if (path.isHomePage) {
+      return const RouteInformation(location: '/');
+    }
+    if (path.isDetailsPage) {
+      return RouteInformation(location: '/book/${path.id}');
+    }
+    return null;
+  }
+}
+
+class BookRouterDelegate extends RouterDelegate<BookRoutePath>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<BookRoutePath> {
+  @override
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  Book? _selectedBook;
+  bool show404 = false;
+
   List<Book> books = [
     Book('Left Hand of Darkness', 'Ursula K. Le Guin'),
     Book('Too Like the Lightning', 'Ada Palmer'),
     Book('Kindred', 'Octavia E. Butler'),
   ];
 
+  BookRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  BookRoutePath get currentConfiguration {
+    if (show404) {
+      return BookRoutePath.unknown();
+    }
+    return _selectedBook == null
+        ? BookRoutePath.home()
+        : BookRoutePath.details(books.indexOf(_selectedBook!));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Books App',
-      home: Navigator(
-        // Шаблон страницы книги
-        pages: [
-          MaterialPage(
-            key: const ValueKey('BooksListPage'),
-            child: BooksListScreen(
-              books: books,
-              onTapped: _handleBookTapped,
-            ),
+    return Navigator(
+      key: navigatorKey,
+      pages: [
+        MaterialPage(
+          key: const ValueKey('BooksListPage'),
+          child: BooksListScreen(
+            books: books,
+            onTapped: _handleBookTapped,
           ),
-          if (_selectedBook != null) BookDetailsPage(book: _selectedBook)
-        ],
+        ),
+        if (show404)
+          const MaterialPage(
+              key: ValueKey('UnknownPage'), child: UnknownScreen())
+        else if (_selectedBook != null)
+          BookDetailsPage(book: _selectedBook!)
+      ],
 
-        // вызывается при Navigation.pop для обновления состояния
-        onPopPage: (route, result) {
-          // проверка возможности перехода на новую страницу
-          if (!route.didPop(result)) {
-            return false;
-          }
+      // выполняется при Navigation.pop()
+      onPopPage: (route, result) {
+        // - проверка на возможность перехода
+        if (!route.didPop(result)) {
+          return false;
+        }
 
-          // Update the list of pages by setting _selectedBook to null
-          setState(() {
-            _selectedBook = null;
-          });
+        // Update the list of pages by setting _selectedBook to null
+        _selectedBook = null;
+        show404 = false;
+        notifyListeners();
 
-          return true;
-        },
-      ),
+        return true;
+      },
     );
   }
 
-  // Определяем выбранную книгу и запускаем обновление приложения
+  @override
+  Future<void> setNewRoutePath(BookRoutePath path) async {
+    if (path.isUnknown) {
+      _selectedBook = null;
+      show404 = true;
+      return;
+    }
+
+    if (path.isDetailsPage) {
+      if (path.id < 0 || path.id > books.length - 1) {
+        show404 = true;
+        return;
+      }
+
+      _selectedBook = books[path.id];
+    } else {
+      _selectedBook = null;
+    }
+
+    show404 = false;
+  }
+
   void _handleBookTapped(Book book) {
-    setState(() {
-      _selectedBook = book;
-    });
+    _selectedBook = book;
+    notifyListeners();
   }
 }
 
-/// Шаблон информации о выбранной книге
 class BookDetailsPage extends Page {
-  final Book? book;
+  final Book book;
 
   BookDetailsPage({
     required this.book,
@@ -87,10 +175,29 @@ class BookDetailsPage extends Page {
     return MaterialPageRoute(
       settings: this,
       builder: (BuildContext context) {
-        return BookDetailsScreen(book: book!);
+        return BookDetailsScreen(book: book);
       },
     );
   }
+}
+
+class BookRoutePath {
+  final int id;
+  final bool isUnknown;
+
+  BookRoutePath.home()
+      : id = -1,
+        isUnknown = false;
+
+  BookRoutePath.details(this.id) : isUnknown = false;
+
+  BookRoutePath.unknown()
+      : id = -1,
+        isUnknown = true;
+
+  bool get isHomePage => id == -1;
+
+  bool get isDetailsPage => id != -1;
 }
 
 class BooksListScreen extends StatelessWidget {
@@ -142,6 +249,20 @@ class BookDetailsScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class UnknownScreen extends StatelessWidget {
+  const UnknownScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: const Center(
+        child: Text('404!'),
       ),
     );
   }
