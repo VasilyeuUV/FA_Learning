@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// Главная страница - виджет с состоянием
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
@@ -22,7 +23,7 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-/// Главная страница
+/// Главная страница - состояние
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
