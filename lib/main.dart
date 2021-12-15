@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
               // вычисления
               color: snapshot.data as Color?, // - приведение типа
               // длительность анимации цвета
-              duration: const Duration(microseconds: 500),
+              duration: const Duration(milliseconds: 2000),
             );
           },
         ),
