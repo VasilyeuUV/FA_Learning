@@ -1,3 +1,4 @@
+import 'package:fa_learning/color_bloc.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -25,6 +26,15 @@ class MyHomePage extends StatefulWidget {
 
 /// Главная страница - состояние
 class _MyHomePageState extends State<MyHomePage> {
+  // Добавляем бизнес-логику в state нашего приложения
+  final ColorBloc _bloc = ColorBloc();
+
+  @override
+  void dispose() {
+    _bloc.dispose(); // закрываем все потоки
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,13 +43,29 @@ class _MyHomePageState extends State<MyHomePage> {
         centerTitle: true,
       ),
       body: Center(
-        // - анимированный контейнер
-        child: AnimatedContainer(
-          height: 100, // размеры контейнера
-          width: 100,
-          color: Colors.red, // цвет по умолчанию
-          duration:
-              const Duration(microseconds: 500), // длительность анимации цвета
+        // Чтобы UI (нужный нам виджет) мог обновляться согласно изменениям,
+        // поступающим от потока stream, виджет отображения должен быть
+        // обёрнут в специальный виджет StreamBuilder
+        child: StreamBuilder(
+          // - поток с данными
+          // (в нашем случае - это выходной поток с новым состоянием)
+          stream: _bloc.outputStateStream,
+          // - инициализация данных, устанавливаем значение по умолчанию
+          initialData: Colors.red,
+          // - используя получаемые от потока данные, можно перерисовывать виджет
+          builder: (context, snapshot) {
+            // - анимированный контейнер
+            return AnimatedContainer(
+              height: 100, // размеры контейнера
+              width: 100,
+              // - данные получаем через объект async snapshot, который
+              // представляет собой иммутабельное представление асинхронного
+              // вычисления
+              color: snapshot.data as Color?, // - приведение типа
+              // длительность анимации цвета
+              duration: const Duration(microseconds: 500),
+            );
+          },
         ),
       ),
 
@@ -51,7 +77,10 @@ class _MyHomePageState extends State<MyHomePage> {
           // - первая кнопка (красная)
           FloatingActionButton(
             backgroundColor: Colors.red,
-            onPressed: () {},
+            onPressed: () {
+              // передача события по нажатию кнопки в бизнес-логику
+              _bloc.inputEventSink.add(ColorEvent.eventRed);
+            },
           ),
 
           const SizedBox(width: 10), // - отступ между кнопками
@@ -59,7 +88,10 @@ class _MyHomePageState extends State<MyHomePage> {
           // вторая кнопка (зелёная)
           FloatingActionButton(
             backgroundColor: Colors.green,
-            onPressed: () {},
+            onPressed: () {
+              // передача события по нажатию кнопки в бизнес-логику
+              _bloc.inputEventSink.add(ColorEvent.eventGreen);
+            },
           ),
         ],
       ),
